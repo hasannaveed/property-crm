@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@layer components {
+  .btn-primary {
+    @apply bg-sky-600 text-white rounded-lg flex items-center gap-2 px-4 py-2 font-medium hover:bg-sky-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply bg-slate-100 text-slate-700 rounded-lg px-4 py-2 font-medium hover:bg-slate-200 transition-colors;
+  }
+  .btn-danger {
+    @apply bg-red-50 text-red-600 rounded-lg px-4 py-2 font-medium hover:bg-red-100 transition-colors;
+  }
+  .card {
+    @apply bg-white rounded-xl border border-slate-200 shadow-sm;
+  }
+  .input {
+    @apply w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent bg-white;
+  }
+  .label {
+    @apply block text-sm font-medium text-slate-700 mb-1;
+  }
+  .badge-high {
+    @apply bg-red-50 text-red-600 border border-red-200 rounded-full text-xs font-semibold px-2 py-0.5;
+  }
+  .badge-medium {
+    @apply bg-amber-50 text-amber-600 border border-amber-200 rounded-full text-xs font-semibold px-2 py-0.5;
+  }
+  .badge-low {
+    @apply bg-green-50 text-green-600 border border-green-200 rounded-full text-xs font-semibold px-2 py-0.5;
+  }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.2s ease-out;
+}
