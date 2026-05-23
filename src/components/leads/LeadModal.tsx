@@ -9,6 +9,15 @@ interface Agent {
   email: string;
 }
 
+interface Property {
+  _id: string;
+  title: string;
+  type: string;
+  price: number;
+  location: string;
+  status: string;
+}
+
 interface LeadFormData {
   name: string;
   email: string;
@@ -20,6 +29,10 @@ interface LeadFormData {
   assignedTo?: string;
   followUpDate?: string;
   notes?: string;
+  interestedIn?: string;
+  propertyType?: string;
+  budgetMin?: string;
+  budgetMax?: string;
 }
 
 interface LeadModalProps {
@@ -33,6 +46,13 @@ interface LeadModalProps {
 
 const STATUS_OPTIONS = ["new", "contacted", "in-progress", "site-visit", "negotiation", "closed-won", "closed-lost"];
 const SOURCE_OPTIONS = ["facebook-ads", "walk-in", "website", "referral", "other"];
+const PROPERTY_TYPE_OPTIONS = ["any", "plot", "house", "apartment"];
+
+function formatPrice(p: number) {
+  if (p >= 10_000_000) return `${(p / 10_000_000).toFixed(1)}Cr`;
+  if (p >= 100_000) return `${(p / 100_000).toFixed(0)}L`;
+  return `${p.toLocaleString()}`;
+}
 
 export default function LeadModal({ isOpen, onClose, onSave, lead, agents = [], isEditing = false }: LeadModalProps) {
   const [form, setForm] = useState<LeadFormData>({
@@ -46,13 +66,27 @@ export default function LeadModal({ isOpen, onClose, onSave, lead, agents = [], 
     assignedTo: "",
     followUpDate: "",
     notes: "",
+    interestedIn: "",
+    propertyType: "any",
+    budgetMin: "",
+    budgetMax: "",
   });
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [propSearch, setPropSearch] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    if (!isOpen) return;
+    fetch("/api/inventory?limit=100")
+      .then((r) => r.json())
+      .then((d) => setProperties(d.properties ?? []));
+  }, [isOpen]);
+
+  useEffect(() => {
     if (lead && isEditing) {
       const l = lead as Record<string, unknown>;
+      const interestedIn = l.interestedIn as { _id?: string } | string | null;
       setForm({
         name: String(l.name ?? ""),
         email: String(l.email ?? ""),
@@ -64,9 +98,13 @@ export default function LeadModal({ isOpen, onClose, onSave, lead, agents = [], 
         assignedTo: l.assignedTo ? String((l.assignedTo as Record<string, unknown>)._id ?? l.assignedTo) : "",
         followUpDate: l.followUpDate ? String(l.followUpDate).slice(0, 10) : "",
         notes: String(l.notes ?? ""),
+        interestedIn: interestedIn ? String((interestedIn as Record<string, unknown>)._id ?? interestedIn) : "",
+        propertyType: String(l.propertyType ?? "any"),
+        budgetMin: l.budgetMin ? String(l.budgetMin) : "",
+        budgetMax: l.budgetMax ? String(l.budgetMax) : "",
       });
     } else if (!lead) {
-      setForm({ name: "", email: "", phone: "", propertyInterest: "", budget: "", source: "other", status: "new", assignedTo: "", followUpDate: "", notes: "" });
+      setForm({ name: "", email: "", phone: "", propertyInterest: "", budget: "", source: "other", status: "new", assignedTo: "", followUpDate: "", notes: "", interestedIn: "", propertyType: "any", budgetMin: "", budgetMax: "" });
     }
     setErrors([]);
   }, [lead, isEditing, isOpen]);
@@ -76,7 +114,12 @@ export default function LeadModal({ isOpen, onClose, onSave, lead, agents = [], 
     setSaving(true);
     setErrors([]);
     try {
-      await onSave(form as unknown as Record<string, unknown>);
+      await onSave({
+        ...form,
+        interestedIn: form.interestedIn || null,
+        budgetMin: form.budgetMin ? Number(form.budgetMin) : null,
+        budgetMax: form.budgetMax ? Number(form.budgetMax) : null,
+      } as unknown as Record<string, unknown>);
       onClose();
     } catch (err: unknown) {
       const e = err as { errors?: string[]; message?: string };
@@ -88,6 +131,11 @@ export default function LeadModal({ isOpen, onClose, onSave, lead, agents = [], 
 
   const budgetNum = Number(form.budget);
   const crore = budgetNum > 0 ? (budgetNum / 10_000_000).toFixed(2) : null;
+
+  const filteredProperties = properties.filter((p) => {
+    const q = propSearch.toLowerCase();
+    return !q || p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q);
+  });
 
   if (!isOpen) return null;
 
@@ -133,10 +181,54 @@ export default function LeadModal({ isOpen, onClose, onSave, lead, agents = [], 
             {crore && <p className="text-xs text-slate-500 mt-1">{crore} Crore PKR</p>}
           </div>
 
+          {/* Property preference */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">Property Type Preference</label>
+              <select className="input" value={form.propertyType} onChange={(e) => setForm({ ...form, propertyType: e.target.value })}>
+                {PROPERTY_TYPE_OPTIONS.map((t) => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Source</label>
+              <select className="input" value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })}>
+                {SOURCE_OPTIONS.map((s) => <option key={s} value={s}>{s.replace(/-/g, " ")}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Budget range */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">Budget Min (PKR)</label>
+              <input className="input" type="number" value={form.budgetMin} onChange={(e) => setForm({ ...form, budgetMin: e.target.value })} min={0} />
+            </div>
+            <div>
+              <label className="label">Budget Max (PKR)</label>
+              <input className="input" type="number" value={form.budgetMax} onChange={(e) => setForm({ ...form, budgetMax: e.target.value })} min={0} />
+            </div>
+          </div>
+
+          {/* Interested Property */}
           <div>
-            <label className="label">Source</label>
-            <select className="input" value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })}>
-              {SOURCE_OPTIONS.map((s) => <option key={s} value={s}>{s.replace(/-/g, " ")}</option>)}
+            <label className="label">Interested Property</label>
+            <input
+              className="input mb-1"
+              placeholder="Search by title or location…"
+              value={propSearch}
+              onChange={(e) => setPropSearch(e.target.value)}
+            />
+            <select
+              className="input"
+              value={form.interestedIn}
+              onChange={(e) => setForm({ ...form, interestedIn: e.target.value })}
+            >
+              <option value="">None</option>
+              {filteredProperties.map((p) => (
+                <option key={p._id} value={p._id}>
+                  {p.title} — {p.location} ({formatPrice(p.price)}) [{p.status}]
+                </option>
+              ))}
             </select>
           </div>
 

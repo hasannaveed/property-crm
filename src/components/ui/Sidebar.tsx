@@ -12,11 +12,13 @@ import {
   Bell,
   List,
   LogOut,
+  Home,
 } from "lucide-react";
 
 const adminLinks = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/leads", label: "All Leads", icon: List },
+  { href: "/admin/inventory", label: "Inventory", icon: Home },
   { href: "/admin/agents", label: "Agents", icon: Users },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/activity", label: "Activity Log", icon: Activity },
@@ -39,12 +41,12 @@ export default function Sidebar() {
     <aside className="fixed left-0 top-0 w-64 min-h-screen bg-slate-900 flex flex-col z-30">
       <div className="px-5 pt-6 pb-4 border-b border-slate-700">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-sky-500 rounded-xl flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center shrink-0">
             <Building2 className="w-5 h-5 text-white" />
           </div>
           <div>
             <p className="text-white font-semibold text-sm leading-tight">Property CRM</p>
-            <p className="text-sky-400 text-xs capitalize">{role}</p>
+            <p className="text-indigo-400 text-xs capitalize">{role}</p>
           </div>
         </div>
       </div>
@@ -57,7 +59,7 @@ export default function Sidebar() {
               key={href}
               href={href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                active ? "bg-sky-500 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                active ? "bg-indigo-600 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"
               }`}
             >
               <Icon className="w-4 h-4 shrink-0" />

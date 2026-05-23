@@ -4,6 +4,7 @@ import { calculateLeadScore } from "@/lib/scoring";
 export type LeadStatus = "new" | "contacted" | "in-progress" | "site-visit" | "negotiation" | "closed-won" | "closed-lost";
 export type LeadPriority = "high" | "medium" | "low";
 export type LeadSource = "facebook-ads" | "walk-in" | "website" | "referral" | "other";
+export type PropertyTypePreference = "plot" | "house" | "apartment" | "any";
 
 export interface ILead extends Document {
   _id: mongoose.Types.ObjectId;
@@ -20,6 +21,10 @@ export interface ILead extends Document {
   assignedTo?: mongoose.Types.ObjectId;
   followUpDate?: Date;
   lastActivityAt: Date;
+  interestedIn?: mongoose.Types.ObjectId;
+  propertyType: PropertyTypePreference;
+  budgetMin?: number;
+  budgetMax?: number;
 }
 
 const leadSchema = new mongoose.Schema<ILead>(
@@ -41,6 +46,14 @@ const leadSchema = new mongoose.Schema<ILead>(
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     followUpDate: { type: Date, default: null },
     lastActivityAt: { type: Date, default: Date.now },
+    interestedIn: { type: mongoose.Schema.Types.ObjectId, ref: "Property", default: null },
+    propertyType: {
+      type: String,
+      enum: ["plot", "house", "apartment", "any"],
+      default: "any",
+    },
+    budgetMin: { type: Number, default: null },
+    budgetMax: { type: Number, default: null },
   },
   { timestamps: true }
 );
@@ -58,6 +71,7 @@ leadSchema.index({ status: 1 });
 leadSchema.index({ priority: 1 });
 leadSchema.index({ createdAt: -1 });
 leadSchema.index({ followUpDate: 1 });
+leadSchema.index({ interestedIn: 1 });
 
 const Lead: Model<ILead> = mongoose.models.Lead ?? mongoose.model<ILead>("Lead", leadSchema);
 export default Lead;

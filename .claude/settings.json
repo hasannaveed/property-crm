@@ -5,7 +5,10 @@
       "Bash(npx tsc *)",
       "Bash(grep -v \"^$\")",
       "Bash(node -e \"console.log\\(require\\('./node_modules/mongoose/package.json'\\).version\\)\")",
-      "Bash(npx next *)"
+      "Bash(npx next *)",
+      "Bash(Get-ChildItem -Recurse -Path \"c:\\\\Users\\\\admin\\\\Documents\\\\University\\\\Semester 6\\\\Web\\\\assignment3\\\\property-crm\" -Directory)",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object FullName)"
     ],
     "additionalDirectories": [
       "c:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\my-app\\src\\app\\api\\auth",

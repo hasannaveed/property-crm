@@ -4,6 +4,7 @@ import Lead from "@/models/Lead";
 import Activity from "@/models/Activity";
 import { requireSession, rateLimitMiddleware, validateLeadBody } from "@/lib/middleware";
 import { sendNewLeadEmail } from "@/lib/email";
+import mongoose from "mongoose";
 
 export async function GET(req: NextRequest) {
   const { session, error } = await requireSession();
@@ -29,6 +30,7 @@ export async function GET(req: NextRequest) {
   const [leads, total] = await Promise.all([
     Lead.find(query)
       .populate("assignedTo", "name email")
+      .populate("interestedIn", "title type price location status")
       .sort({ score: -1, createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -63,6 +65,10 @@ export async function POST(req: NextRequest) {
     budget: Number(body.budget),
     source: body.source ?? "other",
     notes: body.notes ?? "",
+    interestedIn: body.interestedIn ? new mongoose.Types.ObjectId(body.interestedIn) : null,
+    propertyType: body.propertyType ?? "any",
+    budgetMin: body.budgetMin ? Number(body.budgetMin) : null,
+    budgetMax: body.budgetMax ? Number(body.budgetMax) : null,
   });
 
   await Activity.create({

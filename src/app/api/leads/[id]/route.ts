@@ -18,7 +18,10 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
 
   await connectDB();
 
-  const lead = await Lead.findById(id).populate("assignedTo", "name email").lean();
+  const lead = await Lead.findById(id)
+    .populate("assignedTo", "name email")
+    .populate("interestedIn", "title type price location status area areaUnit")
+    .lean();
   if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
 
   if (session!.user.role === "agent") {
@@ -60,13 +63,17 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
   const prevStatus = lead.status;
   const prevAssignedTo = lead.assignedTo?.toString();
 
-  const allowed = ["name", "email", "phone", "propertyInterest", "budget", "status", "notes", "source", "assignedTo", "followUpDate"];
+  const allowed = ["name", "email", "phone", "propertyInterest", "budget", "status", "notes", "source", "assignedTo", "followUpDate", "interestedIn", "propertyType", "budgetMin", "budgetMax"];
   for (const key of allowed) {
     if (key in body) {
       if (key === "assignedTo") {
         (lead as unknown as Record<string, unknown>)[key] = body[key] ? new mongoose.Types.ObjectId(body[key]) : null;
+      } else if (key === "interestedIn") {
+        (lead as unknown as Record<string, unknown>)[key] = body[key] ? new mongoose.Types.ObjectId(body[key]) : null;
       } else if (key === "followUpDate") {
         (lead as unknown as Record<string, unknown>)[key] = body[key] ? new Date(body[key]) : null;
+      } else if (["budgetMin", "budgetMax"].includes(key)) {
+        (lead as unknown as Record<string, unknown>)[key] = body[key] ? Number(body[key]) : null;
       } else {
         (lead as unknown as Record<string, unknown>)[key] = body[key];
       }
@@ -109,7 +116,10 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
 
   if (activities.length > 0) await Activity.insertMany(activities);
 
-  const populated = await Lead.findById(lead._id).populate("assignedTo", "name email").lean();
+  const populated = await Lead.findById(lead._id)
+    .populate("assignedTo", "name email")
+    .populate("interestedIn", "title type price location status area areaUnit")
+    .lean();
   return NextResponse.json(populated);
 }
 

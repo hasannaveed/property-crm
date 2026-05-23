@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Lead from "@/models/Lead";
+import Property from "@/models/Property";
 import { requireAdmin } from "@/lib/middleware";
 
 export async function GET() {
@@ -13,7 +14,6 @@ export async function GET() {
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
   const now = new Date();
-  const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
 
   const [
     totalLeads,
@@ -23,6 +23,10 @@ export async function GET() {
     recentLeads,
     overdueCount,
     weeklyTrend,
+    totalProperties,
+    propertyByStatus,
+    propertyByType,
+    recentProperties,
   ] = await Promise.all([
     Lead.countDocuments(),
     Lead.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
@@ -61,10 +65,17 @@ export async function GET() {
       },
       { $sort: { _id: 1 } },
     ]),
+    Property.countDocuments(),
+    Property.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
+    Property.aggregate([{ $group: { _id: "$type", count: { $sum: 1 } } }]),
+    Property.find().sort({ createdAt: -1 }).limit(5).lean(),
   ]);
 
   const highPriorityCount = (byPriority.find((p) => p._id === "high") ?? { count: 0 }).count;
   const closedWonCount = (byStatus.find((s) => s._id === "closed-won") ?? { count: 0 }).count;
+
+  const propStatusMap: Record<string, number> = { available: 0, reserved: 0, sold: 0 };
+  for (const s of propertyByStatus) propStatusMap[s._id] = s.count;
 
   return NextResponse.json({
     totalLeads,
@@ -76,5 +87,11 @@ export async function GET() {
     byAgent,
     recentLeads,
     weeklyTrend,
+    totalProperties,
+    availableProperties: propStatusMap.available,
+    reservedProperties: propStatusMap.reserved,
+    soldProperties: propStatusMap.sold,
+    propertyByType,
+    recentProperties,
   });
 }
