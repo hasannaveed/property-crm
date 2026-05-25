@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
-import Property from "@/models/Property";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireSession, requireAdmin } from "@/lib/middleware";
+import { mapProperty } from "@/lib/mappers";
 
 export async function GET(req: NextRequest) {
-  const { session, error } = await requireSession();
+  const { error } = await requireSession();
   if (error) return error;
 
   const { searchParams } = new URL(req.url);
@@ -15,46 +15,38 @@ export async function GET(req: NextRequest) {
   const location = searchParams.get("location");
   const page = Math.max(1, Number(searchParams.get("page") ?? 1));
   const limit = Math.min(100, Math.max(1, Number(searchParams.get("limit") ?? 20)));
-  const skip = (page - 1) * limit;
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
 
-  const query: Record<string, unknown> = {};
-  if (type && type !== "all") query.type = type;
-  if (status) query.status = status;
-  if (minPrice || maxPrice) {
-    query.price = {};
-    if (minPrice) (query.price as Record<string, number>).$gte = Number(minPrice);
-    if (maxPrice) (query.price as Record<string, number>).$lte = Number(maxPrice);
-  }
-  if (location) query.location = { $regex: location, $options: "i" };
+  const db = supabaseAdmin();
+  let query = db
+    .from("properties")
+    .select("*, assigned_agent:profiles!properties_assigned_agent_fkey(id, name, email), created_by:profiles!properties_created_by_fkey(id, name)", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, to);
 
-  await connectDB();
+  if (type && type !== "all") query = query.eq("type", type);
+  if (status) query = query.eq("status", status);
+  if (minPrice) query = query.gte("price", Number(minPrice));
+  if (maxPrice) query = query.lte("price", Number(maxPrice));
+  if (location) query = query.ilike("location", `%${location}%`);
 
-  const [properties, total] = await Promise.all([
-    Property.find(query)
-      .populate("assignedAgent", "name email")
-      .populate("createdBy", "name")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean(),
-    Property.countDocuments(query),
-  ]);
+  const { data, count, error: dbError } = await query;
+  if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 });
 
-  // Return status counts for dashboard stats when no filters applied
+  // Status counts (only when no filters applied)
   let statusCounts: Record<string, number> | undefined;
   if (!type && !status && !minPrice && !maxPrice && !location) {
-    const counts = await Property.aggregate([
-      { $group: { _id: "$status", count: { $sum: 1 } } },
-    ]);
-    statusCounts = { available: 0, reserved: 0, sold: 0 };
-    for (const c of counts) statusCounts[c._id] = c.count;
+    const { data: allProps } = await db.from("properties").select("status");
+    if (allProps) {
+      statusCounts = { available: 0, reserved: 0, sold: 0 };
+      for (const p of allProps) statusCounts[p.status] = (statusCounts[p.status] ?? 0) + 1;
+    }
   }
 
-  void session;
-
   return NextResponse.json({
-    properties,
-    pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    properties: (data ?? []).map((p) => mapProperty(p as Record<string, unknown>)),
+    pagination: { page, limit, total: count ?? 0, pages: Math.ceil((count ?? 0) / limit) },
     ...(statusCounts ? { statusCounts } : {}),
   });
 }
@@ -72,26 +64,31 @@ export async function POST(req: NextRequest) {
   if (!area || Number(area) <= 0) return NextResponse.json({ error: "Valid area is required" }, { status: 422 });
   if (!location?.trim()) return NextResponse.json({ error: "Location is required" }, { status: 422 });
 
-  await connectDB();
+  const db = supabaseAdmin();
+  const { data: property, error: dbError } = await db
+    .from("properties")
+    .insert({
+      title: body.title.trim(),
+      type: body.type,
+      status: body.status ?? "available",
+      price: Number(body.price),
+      area: Number(body.area),
+      area_unit: body.areaUnit ?? "marla",
+      location: body.location.trim(),
+      description: body.description ?? "",
+      bedrooms: body.bedrooms ? Number(body.bedrooms) : null,
+      bathrooms: body.bathrooms ? Number(body.bathrooms) : null,
+      floor: body.floor ? Number(body.floor) : null,
+      facing: body.facing ?? "",
+      features: Array.isArray(body.features) ? body.features : [],
+      images: Array.isArray(body.images) ? body.images : [],
+      assigned_agent: body.assignedAgent || null,
+      created_by: session!.user.id,
+    })
+    .select()
+    .single();
 
-  const property = await Property.create({
-    title: body.title.trim(),
-    type: body.type,
-    status: body.status ?? "available",
-    price: Number(body.price),
-    area: Number(body.area),
-    areaUnit: body.areaUnit ?? "marla",
-    location: body.location.trim(),
-    description: body.description ?? "",
-    bedrooms: body.bedrooms ? Number(body.bedrooms) : undefined,
-    bathrooms: body.bathrooms ? Number(body.bathrooms) : undefined,
-    floor: body.floor ? Number(body.floor) : undefined,
-    facing: body.facing ?? "",
-    features: Array.isArray(body.features) ? body.features : [],
-    images: Array.isArray(body.images) ? body.images : [],
-    assignedAgent: body.assignedAgent || null,
-    createdBy: session!.user.id,
-  });
+  if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 });
 
-  return NextResponse.json(property, { status: 201 });
+  return NextResponse.json(mapProperty(property as Record<string, unknown>), { status: 201 });
 }

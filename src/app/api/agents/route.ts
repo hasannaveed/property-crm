@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
-import User from "@/models/User";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireAdmin } from "@/lib/middleware";
 
 export async function GET() {
   const { error } = await requireAdmin();
   if (error) return error;
 
-  await connectDB();
-  const agents = await User.find({ role: "agent", isActive: true }).select("name email phone createdAt").lean();
-  return NextResponse.json({ agents });
+  const db = supabaseAdmin();
+  const { data, error: dbError } = await db
+    .from("profiles")
+    .select("id, name, email, phone, created_at")
+    .eq("role", "agent")
+    .eq("is_active", true);
+
+  if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 });
+
+  return NextResponse.json({ agents: (data ?? []).map((a) => ({ ...a, _id: a.id })) });
 }

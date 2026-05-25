@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Building2, Mail, Lock, AlertCircle, Eye, EyeOff } from "lucide-react";
@@ -23,13 +23,15 @@ function LoginForm() {
     setLoading(true);
     setError("");
 
-    const result = await signIn("credentials", { email, password, redirect: false });
+    const supabase = supabaseBrowser();
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (result?.error) {
+    if (authError) {
       setError("Invalid email or password");
       setLoading(false);
     } else {
       router.push("/");
+      router.refresh();
     }
   };
 

@@ -1,11 +1,11 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { supabaseServer } from "@/lib/supabase";
 import { redirect } from "next/navigation";
 
 export default async function Home() {
-  const session = await getServerSession(authOptions);
+  const supabase = await supabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session) redirect("/auth/login");
-  if (session.user.role === "admin") redirect("/admin/dashboard");
+  if (!user) redirect("/auth/login");
+  if (user.user_metadata?.role === "admin") redirect("/admin/dashboard");
   redirect("/agent/dashboard");
 }

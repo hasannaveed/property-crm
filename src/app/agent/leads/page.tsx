@@ -45,7 +45,7 @@ export default function AgentLeadsPage() {
       result = result.filter((l) => l.name.toLowerCase().includes(q) || l.phone.includes(q));
     }
     setLeads(result);
-    setPagination(data.pagination);
+    setPagination(data.pagination ?? { page: 1, pages: 1, total: 0 });
     setLoading(false);
   }, [search, statusFilter]);
 

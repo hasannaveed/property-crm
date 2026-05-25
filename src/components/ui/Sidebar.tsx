@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { usePathname, useRouter } from "next/navigation";
+import { supabaseBrowser } from "@/lib/supabase-browser";
+import { useEffect, useState } from "react";
 import {
   Building2,
   LayoutDashboard,
@@ -28,14 +29,37 @@ const adminLinks = [
 const agentLinks = [
   { href: "/agent/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/agent/leads", label: "My Leads", icon: List },
+  { href: "/agent/inventory", label: "Inventory", icon: Home },
   { href: "/agent/reminders", label: "Reminders", icon: Bell },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
-  const role = session?.user?.role;
+  const router = useRouter();
+  const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
+
+  useEffect(() => {
+    const supabase = supabaseBrowser();
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setUser({
+          name: (data.user.user_metadata?.name as string) ?? "",
+          email: data.user.email ?? "",
+          role: (data.user.user_metadata?.role as string) ?? "agent",
+        });
+      }
+    });
+  }, []);
+
+  const role = user?.role;
   const links = role === "admin" ? adminLinks : agentLinks;
+
+  const handleSignOut = async () => {
+    const supabase = supabaseBrowser();
+    await supabase.auth.signOut();
+    router.push("/auth/login");
+    router.refresh();
+  };
 
   return (
     <aside className="fixed left-0 top-0 w-64 min-h-screen bg-slate-900 flex flex-col z-30">
@@ -71,11 +95,11 @@ export default function Sidebar() {
 
       <div className="px-4 pb-5 border-t border-slate-700 pt-4">
         <div className="mb-3">
-          <p className="text-white text-sm font-medium truncate">{session?.user?.name}</p>
-          <p className="text-slate-400 text-xs truncate">{session?.user?.email}</p>
+          <p className="text-white text-sm font-medium truncate">{user?.name}</p>
+          <p className="text-slate-400 text-xs truncate">{user?.email}</p>
         </div>
         <button
-          onClick={() => signOut({ callbackUrl: "/auth/login" })}
+          onClick={handleSignOut}
           className="flex items-center gap-2 text-slate-400 hover:text-white text-sm transition-colors w-full"
         >
           <LogOut className="w-4 h-4" />

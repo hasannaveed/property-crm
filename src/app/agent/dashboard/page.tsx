@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 import { MessageCircle, AlertTriangle, Clock, Calendar, List } from "lucide-react";
 
 interface Lead {
@@ -21,12 +21,15 @@ function formatBudget(b: number) {
 }
 
 export default function AgentDashboard() {
-  const { data: session } = useSession();
+  const [firstName, setFirstName] = useState("Agent");
   const [leads, setLeads] = useState<Lead[]>([]);
   const [reminders, setReminders] = useState<RemindersData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    supabaseBrowser().auth.getUser().then(({ data }) => {
+      if (data.user) setFirstName(data.user.user_metadata?.name?.split(" ")[0] ?? "Agent");
+    });
     Promise.all([fetch("/api/leads?limit=50"), fetch("/api/reminders")])
       .then(([leadsRes, remindersRes]) => Promise.all([leadsRes.json(), remindersRes.json()]))
       .then(([leadsData, remindersData]) => {
@@ -35,8 +38,6 @@ export default function AgentDashboard() {
       })
       .finally(() => setLoading(false));
   }, []);
-
-  const firstName = session?.user?.name?.split(" ")[0] ?? "Agent";
   const highPriorityLeads = leads.filter((l) => l.priority === "high").slice(0, 5);
 
   if (loading) {

@@ -3,10 +3,7 @@
  * Seeds 10 sample properties for development.
  */
 
-import mongoose from "mongoose";
-import { connectDB } from "./db";
-import Property from "@/models/Property";
-import User from "@/models/User";
+import { supabaseAdmin } from "./supabase";
 
 const SAMPLE_PROPERTIES = [
   {
@@ -15,7 +12,7 @@ const SAMPLE_PROPERTIES = [
     status: "available",
     price: 12_500_000,
     area: 5,
-    areaUnit: "marla",
+    area_unit: "marla",
     location: "DHA Phase 6, Lahore",
     description: "Prime corner plot on 30-feet road. All utilities available.",
     features: ["Corner", "Gas Available", "Main Boulevard"],
@@ -27,7 +24,7 @@ const SAMPLE_PROPERTIES = [
     status: "available",
     price: 28_000_000,
     area: 10,
-    areaUnit: "marla",
+    area_unit: "marla",
     location: "Bahria Town Phase 4, Rawalpindi",
     description: "Fully furnished 5-bedroom house with basement and double garage.",
     bedrooms: 5,
@@ -41,7 +38,7 @@ const SAMPLE_PROPERTIES = [
     status: "available",
     price: 9_500_000,
     area: 1050,
-    areaUnit: "sqft",
+    area_unit: "sqft",
     location: "Gulberg III, Lahore",
     description: "Modern apartment on 5th floor with city view and dedicated parking.",
     bedrooms: 2,
@@ -56,7 +53,7 @@ const SAMPLE_PROPERTIES = [
     status: "reserved",
     price: 35_000_000,
     area: 20,
-    areaUnit: "marla",
+    area_unit: "marla",
     location: "Johar Town, Lahore",
     description: "1 Kanal plot in the heart of Johar Town. Ready for construction.",
     features: ["Near Mosque", "Double Road"],
@@ -68,7 +65,7 @@ const SAMPLE_PROPERTIES = [
     status: "available",
     price: 7_200_000,
     area: 3,
-    areaUnit: "marla",
+    area_unit: "marla",
     location: "Wapda Town, Lahore",
     description: "Brand new 3 Marla double-story house. Ready for possession.",
     bedrooms: 3,
@@ -82,7 +79,7 @@ const SAMPLE_PROPERTIES = [
     status: "available",
     price: 45_000_000,
     area: 2800,
-    areaUnit: "sqft",
+    area_unit: "sqft",
     location: "Clifton Block 5, Karachi",
     description: "Sea-view luxury apartment with top-of-the-line fittings and gym access.",
     bedrooms: 3,
@@ -97,7 +94,7 @@ const SAMPLE_PROPERTIES = [
     status: "sold",
     price: 6_500_000,
     area: 5,
-    areaUnit: "marla",
+    area_unit: "marla",
     location: "Bahria Orchard Phase 1, Lahore",
     description: "Residential plot in Bahria Orchard. Possession available.",
     features: ["Gas Available", "Near Mosque"],
@@ -109,7 +106,7 @@ const SAMPLE_PROPERTIES = [
     status: "available",
     price: 42_000_000,
     area: 7,
-    areaUnit: "marla",
+    area_unit: "marla",
     location: "G-11/3, Islamabad",
     description: "Well-maintained house with rooftop and a private garden.",
     bedrooms: 4,
@@ -123,7 +120,7 @@ const SAMPLE_PROPERTIES = [
     status: "available",
     price: 4_800_000,
     area: 650,
-    areaUnit: "sqft",
+    area_unit: "sqft",
     location: "Gulshan-e-Iqbal, Karachi",
     description: "Compact studio apartment ideal for investment. Rental yield: ~6%.",
     bedrooms: 1,
@@ -138,7 +135,7 @@ const SAMPLE_PROPERTIES = [
     status: "available",
     price: 18_000_000,
     area: 40,
-    areaUnit: "marla",
+    area_unit: "marla",
     location: "Bedian Road, Lahore",
     description: "Ideal for farm house construction. Tube well available on site.",
     features: ["Double Road", "Gas Available"],
@@ -147,22 +144,37 @@ const SAMPLE_PROPERTIES = [
 ];
 
 async function seed() {
-  await connectDB();
+  const db = supabaseAdmin();
 
-  const admin = await User.findOne({ role: "admin" }).lean() as { _id: mongoose.Types.ObjectId } | null;
-  if (!admin) {
-    console.error("No admin user found. Create an admin first via /api/auth/signup.");
+  const { data: adminProfile, error: adminErr } = await db
+    .from("profiles")
+    .select("id")
+    .eq("role", "admin")
+    .limit(1)
+    .single();
+
+  if (adminErr || !adminProfile) {
+    console.error("No admin profile found. Create an admin first via /api/auth/signup.");
     process.exit(1);
   }
 
-  const existing = await Property.countDocuments();
-  if (existing > 0) {
-    console.log(`${existing} properties already exist. Skipping seed.`);
+  const { count } = await db
+    .from("properties")
+    .select("*", { count: "exact", head: true });
+
+  if (count && count > 0) {
+    console.log(`${count} properties already exist. Skipping seed.`);
     process.exit(0);
   }
 
-  const docs = SAMPLE_PROPERTIES.map((p) => ({ ...p, createdBy: admin._id }));
-  await Property.insertMany(docs);
+  const docs = SAMPLE_PROPERTIES.map((p) => ({ ...p, created_by: adminProfile.id }));
+
+  const { error } = await db.from("properties").insert(docs);
+  if (error) {
+    console.error("Seed failed:", error.message);
+    process.exit(1);
+  }
+
   console.log(`Seeded ${docs.length} properties successfully.`);
   process.exit(0);
 }

@@ -1,0 +1,262 @@
+{
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\eslint.config.mjs": {
+    "mtime": 1776754704.4237552,
+    "hash": "dfa1f5f6a7037bf39dc510f30b180002"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\next-env.d.ts": {
+    "mtime": 1777465884.9888074,
+    "hash": "d0f8375ae1199dc7acd3977fc33b78b8"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\next.config.ts": {
+    "mtime": 1776754704.4783003,
+    "hash": "9b77af189a21a7a64e4bd7a426f64176"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\postcss.config.mjs": {
+    "mtime": 1776754704.4355626,
+    "hash": "239f3ebf717465dc636818a1a619398d"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\middleware.ts": {
+    "mtime": 1777464446.922557,
+    "hash": "1f770ff3df66e5fd8575daba33511213"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\layout.tsx": {
+    "mtime": 1777464064.213579,
+    "hash": "8503c5331322162b47ab084101a4ff86"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\page.tsx": {
+    "mtime": 1777464065.24899,
+    "hash": "7666a748a858f86edff528a789586582"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\admin\\layout.tsx": {
+    "mtime": 1779540066.8463233,
+    "hash": "39cb59a94c51f4a91fa7d7da9770938f"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\admin\\activity\\page.tsx": {
+    "mtime": 1777464244.0750434,
+    "hash": "a2c087a544ee5c82567fbbb7c0a3da6c"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\admin\\agents\\page.tsx": {
+    "mtime": 1777464235.5985897,
+    "hash": "68eb3d4006cc5c3a8ba15f184cae9a3a"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\admin\\analytics\\page.tsx": {
+    "mtime": 1777464477.33992,
+    "hash": "fa1d0d802741e4d7c76233dcbdcdf9ee"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\admin\\dashboard\\page.tsx": {
+    "mtime": 1779540000.9281616,
+    "hash": "b9c1e97aeb30929cf73e334ab4f74d14"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\admin\\inventory\\page.tsx": {
+    "mtime": 1779539885.7789187,
+    "hash": "4abf130df9543f9682169f968d4101c2"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\admin\\inventory\\[id]\\page.tsx": {
+    "mtime": 1779539941.464954,
+    "hash": "2a4349c2b30f2c1e8e179329ea1f4d51"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\admin\\leads\\page.tsx": {
+    "mtime": 1777464200.387405,
+    "hash": "020907cff6d8675c1bcad580556f0395"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\admin\\leads\\[id]\\page.tsx": {
+    "mtime": 1777464224.8465824,
+    "hash": "019d8c05251949e728395a5eca69c5bf"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\admin\\reminders\\page.tsx": {
+    "mtime": 1777464275.2844114,
+    "hash": "7edcaf391ecf8ab01bf72ed2dc23113e"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\agent\\layout.tsx": {
+    "mtime": 1777464139.925076,
+    "hash": "94e3a2fee8ba970f5d2b87f3b32e05f5"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\agent\\dashboard\\page.tsx": {
+    "mtime": 1777464299.6874444,
+    "hash": "898b23968b205303e42adc8453555816"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\agent\\leads\\page.tsx": {
+    "mtime": 1777464318.8354664,
+    "hash": "4fab0e4f5f9644813a7557b74fe92519"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\agent\\leads\\[id]\\page.tsx": {
+    "mtime": 1777464342.5637784,
+    "hash": "37b753a2a234b2694b0775b104c83956"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\agent\\reminders\\page.tsx": {
+    "mtime": 1777464353.9653978,
+    "hash": "4ff377d00fba050151309f38e4e8bde2"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\api\\activity\\route.ts": {
+    "mtime": 1777464035.288535,
+    "hash": "626c79b70842062cc6cc1a7be3d0758e"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\api\\agents\\route.ts": {
+    "mtime": 1777463997.1642473,
+    "hash": "1e466e5d264e02b1e19763262c7d3dcb"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\api\\analytics\\route.ts": {
+    "mtime": 1779539685.195066,
+    "hash": "03241f511e397766e4fec3b95473ef6e"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\api\\auth\\signup\\route.ts": {
+    "mtime": 1777463995.4920232,
+    "hash": "6f24fe8d6968d38fad0f1a85168d5fe5"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\api\\auth\\[...nextauth]\\route.ts": {
+    "mtime": 1777463992.1925704,
+    "hash": "cb0447645f692ce8b6e64b54c4e4ceb5"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\api\\inventory\\route.ts": {
+    "mtime": 1779539597.4322338,
+    "hash": "a3df1f92bbebc300acf1fb53d22bff0f"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\api\\inventory\\[id]\\route.ts": {
+    "mtime": 1779539612.2840698,
+    "hash": "42bdbb32c46eb5928fc7941a1730e92b"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\api\\leads\\route.ts": {
+    "mtime": 1779539637.4975133,
+    "hash": "b0367ad4230191e76397f494ce6d6dab"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\api\\leads\\[id]\\route.ts": {
+    "mtime": 1779539658.5282032,
+    "hash": "9830b5b2bc1af5456c43a1ab9d51e921"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\api\\realtime\\route.ts": {
+    "mtime": 1777464045.5629196,
+    "hash": "032cec32105b4ff9bf8e3cc699702ede"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\api\\reminders\\route.ts": {
+    "mtime": 1777464040.7781744,
+    "hash": "a384f8adfdcb1b66e40d0b691d4cead8"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\auth\\login\\page.tsx": {
+    "mtime": 1777464090.4163659,
+    "hash": "e536f618434fc72732a53732142836d0"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\app\\auth\\signup\\page.tsx": {
+    "mtime": 1777464103.412261,
+    "hash": "ee37c79c910db5540f65d27feebd7d76"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\components\\auth\\AuthProvider.tsx": {
+    "mtime": 1777463915.4571564,
+    "hash": "77369056c24ef16312e5adc715abe21d"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\components\\inventory\\PropertyModal.tsx": {
+    "mtime": 1779539832.289764,
+    "hash": "0ef1582789d4238b25b73ab1e83c065f"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\components\\leads\\LeadModal.tsx": {
+    "mtime": 1779540048.7431269,
+    "hash": "dc9d6464dcb47408fc67c6bc5ecac538"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\components\\ui\\Badge.tsx": {
+    "mtime": 1779539715.5732908,
+    "hash": "503f631b716f7d1112dbbc3994bcaca2"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\components\\ui\\EmptyState.tsx": {
+    "mtime": 1779539731.5340734,
+    "hash": "3c84981e0f222e3d87314eba030daeaf"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\components\\ui\\Modal.tsx": {
+    "mtime": 1779539724.0372808,
+    "hash": "09ada0a94cc04a4b5664443acaa6dce3"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\components\\ui\\PageHeader.tsx": {
+    "mtime": 1779539736.2366655,
+    "hash": "18110252ab0f5ccf054aae25f45fcfc3"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\components\\ui\\RealtimeNotifications.tsx": {
+    "mtime": 1777463930.9945097,
+    "hash": "1d26aceaa5cd36a92323c702941e4f9a"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\components\\ui\\Sidebar.tsx": {
+    "mtime": 1779539781.885535,
+    "hash": "888a8d3e091ed0eb05382c3dc582f273"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\components\\ui\\Toast.tsx": {
+    "mtime": 1779539708.7692387,
+    "hash": "11fd0f7ea697c3aa909b512b088088a4"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\hooks\\useRealtime.ts": {
+    "mtime": 1777463919.1242828,
+    "hash": "ace8a3135dd12f47039cf6e8367a60e2"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\lib\\auth.ts": {
+    "mtime": 1777463870.6237125,
+    "hash": "a3ac87ccacc2788a15a7666060422cdd"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\lib\\db.ts": {
+    "mtime": 1777463840.17346,
+    "hash": "e7bcf22f93a64645d0d1a2c05fdc5edb"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\lib\\email.ts": {
+    "mtime": 1777463855.5507967,
+    "hash": "4e7b5d6a3fcf38874b9bb6002c1b1ae5"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\lib\\middleware.ts": {
+    "mtime": 1777463866.8486106,
+    "hash": "da7bc1355a99dec41f595df9a347aebb"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\lib\\scoring.ts": {
+    "mtime": 1777463843.265205,
+    "hash": "78ad843aa50fef82971171dca00feb94"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\lib\\seedInventory.ts": {
+    "mtime": 1779540098.177451,
+    "hash": "5177b232dbc0509abc1a21b199d59bfa"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\models\\Activity.ts": {
+    "mtime": 1777463893.6067293,
+    "hash": "addc33f4e87b490065a303a81066752f"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\models\\Lead.ts": {
+    "mtime": 1779539570.9014606,
+    "hash": "b00bcc3282b40abb30a36e3321b51bdf"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\models\\Property.ts": {
+    "mtime": 1779539548.9908035,
+    "hash": "b740a4a192873b9d4a4f54e6095c5439"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\models\\User.ts": {
+    "mtime": 1777464649.6035123,
+    "hash": "91925402460a30614fb0534e19c6162c"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\src\\types\\next-auth.d.ts": {
+    "mtime": 1777463829.31471,
+    "hash": "1fbb068df027a1b530afc9e93bf87f78"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\AGENTS.md": {
+    "mtime": 1777463229.0698216,
+    "hash": "9e09241799026ac05be315a2f0b50055"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\CLAUDE.md": {
+    "mtime": 1777463229.0717423,
+    "hash": "5c27369b226fcf2be8a6cfe52224e767"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\README.md": {
+    "mtime": 1776754704.4124608,
+    "hash": "f15aaa42d5d299d091b1171097ea56ad"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\public\\file.svg": {
+    "mtime": 1776754704.4406686,
+    "hash": "d09f95206c3fa0bb9bd9fefabfd0ea71"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\public\\globe.svg": {
+    "mtime": 1776754704.4489882,
+    "hash": "2aaafa6a49b6563925fe440891e32717"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\public\\next.svg": {
+    "mtime": 1776754704.4549975,
+    "hash": "8e061864f388b47f33a1c3780831193e"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\public\\vercel.svg": {
+    "mtime": 1776754704.4605074,
+    "hash": "c0af2f507b369b085b35ef4bbe3bcf1e"
+  },
+  "C:\\Users\\admin\\Documents\\University\\Semester 6\\Web\\assignment3\\property-crm\\public\\window.svg": {
+    "mtime": 1776754704.464707,
+    "hash": "a2760511c65806022ad20adf74370ff3"
+  }
+}

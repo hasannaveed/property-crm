@@ -1,81 +1,83 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
-import Lead from "@/models/Lead";
-import Property from "@/models/Property";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireAdmin } from "@/lib/middleware";
+import { mapLead, mapProperty } from "@/lib/mappers";
 
 export async function GET() {
   const { error } = await requireAdmin();
   if (error) return error;
 
-  await connectDB();
-
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
+  const db = supabaseAdmin();
   const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
   const [
-    totalLeads,
-    byStatus,
-    byPriority,
-    byAgent,
-    recentLeads,
-    overdueCount,
-    weeklyTrend,
-    totalProperties,
-    propertyByStatus,
-    propertyByType,
-    recentProperties,
+    { data: allLeads },
+    { data: recentLeads },
+    { data: allProperties },
+    { data: recentProperties },
+    { data: agentProfiles },
   ] = await Promise.all([
-    Lead.countDocuments(),
-    Lead.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
-    Lead.aggregate([{ $group: { _id: "$priority", count: { $sum: 1 } } }]),
-    Lead.aggregate([
-      { $match: { assignedTo: { $ne: null } } },
-      {
-        $group: {
-          _id: "$assignedTo",
-          totalLeads: { $sum: 1 },
-          closedWon: { $sum: { $cond: [{ $eq: ["$status", "closed-won"] }, 1, 0] } },
-          highPriority: { $sum: { $cond: [{ $eq: ["$priority", "high"] }, 1, 0] } },
-        },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "_id",
-          foreignField: "_id",
-          as: "agent",
-        },
-      },
-      { $unwind: "$agent" },
-      { $project: { name: "$agent.name", email: "$agent.email", totalLeads: 1, closedWon: 1, highPriority: 1 } },
-      { $sort: { totalLeads: -1 } },
-    ]),
-    Lead.find().sort({ createdAt: -1 }).limit(5).populate("assignedTo", "name").lean(),
-    Lead.countDocuments({ followUpDate: { $lt: now }, status: { $nin: ["closed-won", "closed-lost"] } }),
-    Lead.aggregate([
-      { $match: { createdAt: { $gte: sevenDaysAgo } } },
-      {
-        $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-          count: { $sum: 1 },
-        },
-      },
-      { $sort: { _id: 1 } },
-    ]),
-    Property.countDocuments(),
-    Property.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
-    Property.aggregate([{ $group: { _id: "$type", count: { $sum: 1 } } }]),
-    Property.find().sort({ createdAt: -1 }).limit(5).lean(),
+    db.from("leads").select("id, status, priority, assigned_to, follow_up_date, last_activity_at, created_at"),
+    db.from("leads").select("*, assigned_to:profiles!leads_assigned_to_fkey(id, name, email)").order("created_at", { ascending: false }).limit(5),
+    db.from("properties").select("id, status, type, created_at"),
+    db.from("properties").select("*").order("created_at", { ascending: false }).limit(5),
+    db.from("profiles").select("id, name, email").eq("role", "agent"),
   ]);
 
-  const highPriorityCount = (byPriority.find((p) => p._id === "high") ?? { count: 0 }).count;
-  const closedWonCount = (byStatus.find((s) => s._id === "closed-won") ?? { count: 0 }).count;
+  const leads = allLeads ?? [];
+  const totalLeads = leads.length;
+  const highPriorityCount = leads.filter((l) => l.priority === "high").length;
+  const closedWonCount = leads.filter((l) => l.status === "closed-won").length;
+  const overdueCount = leads.filter(
+    (l) => l.follow_up_date && new Date(l.follow_up_date) < now && !["closed-won", "closed-lost"].includes(l.status)
+  ).length;
 
-  const propStatusMap: Record<string, number> = { available: 0, reserved: 0, sold: 0 };
-  for (const s of propertyByStatus) propStatusMap[s._id] = s.count;
+  // by status
+  const byStatus = Object.entries(
+    leads.reduce((acc, l) => { acc[l.status] = (acc[l.status] ?? 0) + 1; return acc; }, {} as Record<string, number>)
+  ).map(([_id, count]) => ({ _id, count }));
+
+  // by priority
+  const byPriority = Object.entries(
+    leads.reduce((acc, l) => { acc[l.priority] = (acc[l.priority] ?? 0) + 1; return acc; }, {} as Record<string, number>)
+  ).map(([_id, count]) => ({ _id, count }));
+
+  // weekly trend
+  const weeklyLeads = leads.filter((l) => new Date(l.created_at) >= sevenDaysAgo);
+  const trendMap = weeklyLeads.reduce((acc, l) => {
+    const date = l.created_at.split("T")[0];
+    acc[date] = (acc[date] ?? 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const weeklyTrend = Object.entries(trendMap)
+    .map(([_id, count]) => ({ _id, count }))
+    .sort((a, b) => a._id.localeCompare(b._id));
+
+  // by agent
+  const agentLeadMap = leads.reduce((acc, l) => {
+    if (!l.assigned_to) return acc;
+    const id = l.assigned_to as string;
+    acc[id] = acc[id] ?? { totalLeads: 0, closedWon: 0, highPriority: 0 };
+    acc[id].totalLeads++;
+    if (l.status === "closed-won") acc[id].closedWon++;
+    if (l.priority === "high") acc[id].highPriority++;
+    return acc;
+  }, {} as Record<string, { totalLeads: number; closedWon: number; highPriority: number }>);
+
+  const byAgent = (agentProfiles ?? [])
+    .filter((p) => agentLeadMap[p.id])
+    .map((p) => ({ ...agentLeadMap[p.id], _id: p.id, name: p.name, email: p.email }))
+    .sort((a, b) => b.totalLeads - a.totalLeads);
+
+  // properties
+  const props = allProperties ?? [];
+  const totalProperties = props.length;
+  const propStatusMap = props.reduce((acc, p) => { acc[p.status] = (acc[p.status] ?? 0) + 1; return acc; }, {} as Record<string, number>);
+  const propertyByStatus = Object.entries(propStatusMap).map(([_id, count]) => ({ _id, count }));
+  const propertyByType = Object.entries(
+    props.reduce((acc, p) => { acc[p.type] = (acc[p.type] ?? 0) + 1; return acc; }, {} as Record<string, number>)
+  ).map(([_id, count]) => ({ _id, count }));
 
   return NextResponse.json({
     totalLeads,
@@ -85,13 +87,13 @@ export async function GET() {
     byStatus,
     byPriority,
     byAgent,
-    recentLeads,
+    recentLeads: (recentLeads ?? []).map((l) => mapLead(l as Record<string, unknown>)),
     weeklyTrend,
     totalProperties,
-    availableProperties: propStatusMap.available,
-    reservedProperties: propStatusMap.reserved,
-    soldProperties: propStatusMap.sold,
+    availableProperties: propStatusMap.available ?? 0,
+    reservedProperties: propStatusMap.reserved ?? 0,
+    soldProperties: propStatusMap.sold ?? 0,
     propertyByType,
-    recentProperties,
+    recentProperties: (recentProperties ?? []).map((p) => mapProperty(p as Record<string, unknown>)),
   });
 }

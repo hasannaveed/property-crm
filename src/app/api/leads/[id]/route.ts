@@ -1,126 +1,157 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
-import Lead from "@/models/Lead";
-import Activity from "@/models/Activity";
-import User from "@/models/User";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireSession, requireAdmin, rateLimitMiddleware } from "@/lib/middleware";
+import { mapLead, mapActivity, isValidUUID } from "@/lib/mappers";
+import { calculateLeadScore } from "@/lib/scoring";
 import { sendLeadAssignmentEmail } from "@/lib/email";
-import mongoose from "mongoose";
 
 type Ctx = { params: Promise<{ id: string }> };
+
+const LEAD_SELECT = "*, assigned_to:profiles!leads_assigned_to_fkey(id, name, email), interested_in:properties(id, title, type, price, location, status, area, area_unit)";
 
 export async function GET(_req: NextRequest, ctx: Ctx) {
   const { session, error } = await requireSession();
   if (error) return error;
 
   const { id } = await ctx.params;
-  if (!mongoose.isValidObjectId(id)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+  if (!isValidUUID(id)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
 
-  await connectDB();
+  const db = supabaseAdmin();
 
-  const lead = await Lead.findById(id)
-    .populate("assignedTo", "name email")
-    .populate("interestedIn", "title type price location status area areaUnit")
-    .lean();
-  if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+  const { data: lead, error: leadError } = await db
+    .from("leads")
+    .select(LEAD_SELECT)
+    .eq("id", id)
+    .single();
+
+  if (leadError || !lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
 
   if (session!.user.role === "agent") {
-    const assignedId = (lead.assignedTo as { _id: mongoose.Types.ObjectId } | null)?._id?.toString();
+    const assignedId = typeof lead.assigned_to === "object" && lead.assigned_to ? (lead.assigned_to as { id: string }).id : lead.assigned_to;
     if (assignedId !== session!.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const activities = await Activity.find({ lead: id })
-    .populate("performedBy", "name role")
-    .sort({ createdAt: -1 })
-    .lean();
+  const { data: activities } = await db
+    .from("activities")
+    .select("*, performed_by:profiles(id, name, role)")
+    .eq("lead_id", id)
+    .order("created_at", { ascending: false });
 
-  return NextResponse.json({ lead, activities });
+  return NextResponse.json({
+    lead: mapLead(lead as Record<string, unknown>),
+    activities: (activities ?? []).map((a) => mapActivity(a as Record<string, unknown>)),
+  });
 }
 
 export async function PUT(req: NextRequest, ctx: Ctx) {
   const { session, error } = await requireSession();
   if (error) return error;
 
-  const rl = rateLimitMiddleware(session!.user.email!, session!.user.role);
+  const rl = rateLimitMiddleware(session!.user.email, session!.user.role);
   if (rl) return rl;
 
   const { id } = await ctx.params;
-  if (!mongoose.isValidObjectId(id)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+  if (!isValidUUID(id)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
 
-  await connectDB();
+  const db = supabaseAdmin();
 
-  const lead = await Lead.findById(id);
-  if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+  const { data: existing, error: fetchError } = await db.from("leads").select("*").eq("id", id).single();
+  if (fetchError || !existing) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
 
-  if (session!.user.role === "agent") {
-    if (lead.assignedTo?.toString() !== session!.user.id)
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (session!.user.role === "agent" && existing.assigned_to !== session!.user.id) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const body = await req.json();
   if (session!.user.role === "agent") delete body.assignedTo;
 
-  const prevStatus = lead.status;
-  const prevAssignedTo = lead.assignedTo?.toString();
+  const updates: Record<string, unknown> = { last_activity_at: new Date().toISOString() };
+  const fieldMap: Record<string, string> = {
+    name: "name", email: "email", phone: "phone", budget: "budget",
+    status: "status", notes: "notes", source: "source",
+    propertyInterest: "property_interest",
+    assignedTo: "assigned_to",
+    followUpDate: "follow_up_date",
+    interestedIn: "interested_in",
+    propertyType: "property_type",
+    budgetMin: "budget_min",
+    budgetMax: "budget_max",
+  };
 
-  const allowed = ["name", "email", "phone", "propertyInterest", "budget", "status", "notes", "source", "assignedTo", "followUpDate", "interestedIn", "propertyType", "budgetMin", "budgetMax"];
-  for (const key of allowed) {
-    if (key in body) {
-      if (key === "assignedTo") {
-        (lead as unknown as Record<string, unknown>)[key] = body[key] ? new mongoose.Types.ObjectId(body[key]) : null;
-      } else if (key === "interestedIn") {
-        (lead as unknown as Record<string, unknown>)[key] = body[key] ? new mongoose.Types.ObjectId(body[key]) : null;
-      } else if (key === "followUpDate") {
-        (lead as unknown as Record<string, unknown>)[key] = body[key] ? new Date(body[key]) : null;
-      } else if (["budgetMin", "budgetMax"].includes(key)) {
-        (lead as unknown as Record<string, unknown>)[key] = body[key] ? Number(body[key]) : null;
+  for (const [camel, snake] of Object.entries(fieldMap)) {
+    if (camel in body) {
+      if (camel === "budget") {
+        const { score, priority } = calculateLeadScore(Number(body.budget));
+        updates.budget = Number(body.budget);
+        updates.score = score;
+        updates.priority = priority;
+      } else if (["budgetMin", "budgetMax"].includes(camel)) {
+        updates[snake] = body[camel] ? Number(body[camel]) : null;
       } else {
-        (lead as unknown as Record<string, unknown>)[key] = body[key];
+        updates[snake] = body[camel] ?? null;
       }
     }
   }
 
-  lead.lastActivityAt = new Date();
-  await lead.save();
+  const { data: updated, error: updateError } = await db
+    .from("leads")
+    .update(updates)
+    .eq("id", id)
+    .select(LEAD_SELECT)
+    .single();
 
-  const newAssignedTo = lead.assignedTo?.toString();
-  const activities = [];
+  if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
 
-  if (body.status && body.status !== prevStatus) {
-    activities.push({ lead: lead._id, performedBy: session!.user.id, type: "status_updated", description: `Status changed from "${prevStatus}" to "${body.status}"`, metadata: { from: prevStatus, to: body.status } });
+  // Build activity records
+  const activityInserts = [];
+
+  if (body.status && body.status !== existing.status) {
+    activityInserts.push({
+      lead_id: id, performed_by: session!.user.id, type: "status_updated",
+      description: `Status changed from "${existing.status}" to "${body.status}"`,
+      metadata: { from: existing.status, to: body.status },
+    });
   }
 
-  if ("assignedTo" in body && newAssignedTo !== prevAssignedTo) {
-    const type = prevAssignedTo ? "reassigned" : "assigned";
-    activities.push({ lead: lead._id, performedBy: session!.user.id, type, description: `Lead ${type} to new agent`, metadata: { from: prevAssignedTo, to: newAssignedTo } });
+  if ("assignedTo" in body && body.assignedTo !== existing.assigned_to) {
+    const type = existing.assigned_to ? "reassigned" : "assigned";
+    activityInserts.push({
+      lead_id: id, performed_by: session!.user.id, type,
+      description: `Lead ${type} to new agent`,
+      metadata: { from: existing.assigned_to, to: body.assignedTo },
+    });
 
-    if (newAssignedTo) {
-      const agent = await User.findById(newAssignedTo).lean() as { name: string; email: string } | null;
+    if (body.assignedTo && isValidUUID(body.assignedTo)) {
+      const { data: agent } = await db.from("profiles").select("name, email").eq("id", body.assignedTo).single();
       if (agent) {
+        const lead = updated!;
         sendLeadAssignmentEmail({
           agentName: agent.name,
           agentEmail: agent.email,
-          lead: { _id: lead._id.toString(), name: lead.name, email: lead.email, phone: lead.phone, budget: lead.budget, propertyInterest: lead.propertyInterest },
+          lead: { _id: lead.id, name: lead.name, email: lead.email, phone: lead.phone, budget: lead.budget, propertyInterest: lead.property_interest },
         }).catch(console.error);
       }
     }
   }
 
   if ("notes" in body) {
-    activities.push({ lead: lead._id, performedBy: session!.user.id, type: "notes_updated", description: "Notes were updated", metadata: {} });
+    activityInserts.push({
+      lead_id: id, performed_by: session!.user.id, type: "notes_updated",
+      description: "Notes were updated", metadata: {},
+    });
   }
 
   if ("followUpDate" in body && body.followUpDate) {
-    activities.push({ lead: lead._id, performedBy: session!.user.id, type: "follow_up_set", description: `Follow-up scheduled for ${new Date(body.followUpDate).toLocaleDateString()}`, metadata: { date: body.followUpDate } });
+    activityInserts.push({
+      lead_id: id, performed_by: session!.user.id, type: "follow_up_set",
+      description: `Follow-up scheduled for ${new Date(body.followUpDate).toLocaleDateString()}`,
+      metadata: { date: body.followUpDate },
+    });
   }
 
-  if (activities.length > 0) await Activity.insertMany(activities);
+  if (activityInserts.length > 0) await db.from("activities").insert(activityInserts);
 
-  const populated = await Lead.findById(lead._id)
-    .populate("assignedTo", "name email")
-    .populate("interestedIn", "title type price location status area areaUnit")
-    .lean();
-  return NextResponse.json(populated);
+  return NextResponse.json(mapLead(updated as unknown as Record<string, unknown>));
 }
 
 export async function DELETE(_req: NextRequest, ctx: Ctx) {
@@ -128,20 +159,20 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
   if (error) return error;
 
   const { id } = await ctx.params;
-  if (!mongoose.isValidObjectId(id)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+  if (!isValidUUID(id)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
 
-  await connectDB();
+  const db = supabaseAdmin();
 
-  const lead = await Lead.findByIdAndDelete(id);
-  if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+  const { data: lead, error: fetchError } = await db.from("leads").select("name").eq("id", id).single();
+  if (fetchError || !lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
 
-  await Activity.create({
-    lead: lead._id,
-    performedBy: session!.user.id,
-    type: "lead_deleted",
-    description: `Lead "${lead.name}" was deleted`,
-    metadata: { name: lead.name },
+  // Log before delete (activities are cascade-deleted with the lead)
+  await db.from("activities").insert({
+    lead_id: id, performed_by: session!.user.id, type: "lead_deleted",
+    description: `Lead "${lead.name}" was deleted`, metadata: { name: lead.name },
   });
+
+  await db.from("leads").delete().eq("id", id);
 
   return NextResponse.json({ message: "Lead deleted" });
 }

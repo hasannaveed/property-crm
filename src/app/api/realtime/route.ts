@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
-import Activity from "@/models/Activity";
-import Lead from "@/models/Lead";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireSession } from "@/lib/middleware";
-import mongoose from "mongoose";
+import { mapActivity } from "@/lib/mappers";
 
 export async function GET(req: NextRequest) {
   const { session, error } = await requireSession();
@@ -13,27 +11,38 @@ export async function GET(req: NextRequest) {
   const since = searchParams.get("since");
   const sinceDate = since ? new Date(since) : new Date(Date.now() - 15_000);
 
-  await connectDB();
+  const db = supabaseAdmin();
 
-  const activityQuery: Record<string, unknown> = { createdAt: { $gt: sinceDate } };
+  let activityQuery = db
+    .from("activities")
+    .select("*, performed_by:profiles(id, name), lead:leads(id, name)")
+    .gt("created_at", sinceDate.toISOString())
+    .order("created_at", { ascending: false })
+    .limit(20);
 
   if (session!.user.role === "agent") {
-    const assignedLeads = await Lead.find({ assignedTo: new mongoose.Types.ObjectId(session!.user.id) }).select("_id").lean();
-    const leadIds = assignedLeads.map((l) => l._id);
-    activityQuery.lead = { $in: leadIds };
+    const { data: assignedLeads } = await db
+      .from("leads")
+      .select("id")
+      .eq("assigned_to", session!.user.id);
+
+    const leadIds = (assignedLeads ?? []).map((l) => l.id);
+    if (leadIds.length === 0) {
+      return NextResponse.json({ activities: [], totalLeads: 0, timestamp: new Date().toISOString() });
+    }
+    activityQuery = activityQuery.in("lead_id", leadIds);
   }
 
-  const activities = await Activity.find(activityQuery)
-    .populate("performedBy", "name")
-    .populate("lead", "name")
-    .sort({ createdAt: -1 })
-    .limit(20)
-    .lean();
+  const [{ data: activities }, { count: totalLeads }] = await Promise.all([
+    activityQuery,
+    db.from("leads")
+      .select("*", { count: "exact", head: true })
+      .match(session!.user.role === "agent" ? { assigned_to: session!.user.id } : {}),
+  ]);
 
-  const leadCountQuery: Record<string, unknown> = {};
-  if (session!.user.role === "agent") leadCountQuery.assignedTo = new mongoose.Types.ObjectId(session!.user.id);
-
-  const totalLeads = await Lead.countDocuments(leadCountQuery);
-
-  return NextResponse.json({ activities, totalLeads, timestamp: new Date().toISOString() });
+  return NextResponse.json({
+    activities: (activities ?? []).map((a) => mapActivity(a as Record<string, unknown>)),
+    totalLeads: totalLeads ?? 0,
+    timestamp: new Date().toISOString(),
+  });
 }

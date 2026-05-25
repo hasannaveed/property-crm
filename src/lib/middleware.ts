@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { supabaseServer } from "@/lib/supabase";
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
@@ -68,15 +67,39 @@ export function validateUserBody(body: Record<string, unknown>): { valid: boolea
   return { valid: errors.length === 0, errors };
 }
 
+interface SessionUser {
+  id: string;
+  email: string;
+  name: string;
+  role: "admin" | "agent";
+}
+
+async function getSessionUser(): Promise<{ user: SessionUser | null; error: NextResponse | null }> {
+  const supabase = await supabaseServer();
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) {
+    return { user: null, error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+  }
+  const sessionUser: SessionUser = {
+    id: user.id,
+    email: user.email!,
+    name: (user.user_metadata?.name as string) ?? "",
+    role: ((user.user_metadata?.role as string) ?? "agent") as "admin" | "agent",
+  };
+  return { user: sessionUser, error: null };
+}
+
 export async function requireSession() {
-  const session = await getServerSession(authOptions);
-  if (!session) return { session: null, error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-  return { session, error: null };
+  const { user, error } = await getSessionUser();
+  if (error || !user) return { session: null, error };
+  return { session: { user }, error: null };
 }
 
 export async function requireAdmin() {
-  const session = await getServerSession(authOptions);
-  if (!session) return { session: null, error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-  if (session.user.role !== "admin") return { session: null, error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
-  return { session, error: null };
+  const { user, error } = await getSessionUser();
+  if (error || !user) return { session: null, error };
+  if (user.role !== "admin") {
+    return { session: null, error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
+  }
+  return { session: { user }, error: null };
 }
